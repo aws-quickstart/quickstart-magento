@@ -1,6 +1,7 @@
 global:
   qsname: quickstart-magento
   owner: sshvans@amazon.com
+  s3bucket: sk-quickstarts
   regions:
      - ap-northeast-1
      - ap-northeast-2
@@ -20,6 +21,7 @@ global:
 
 tests:
   quickstart-magento-mysqlt1:
+    s3bucket: sk-quickstarts
     parameter_input: quickstart-magento-mysqlt1.json
     template_file: magento-master.template
     regions:
@@ -31,6 +33,7 @@ tests:
       - us-west-2
 
   quickstart-magento-aurora1:
+    s3bucket: sk-quickstarts
     parameter_input: quickstart-magento-aurora1.json
     template_file: magento-master.template
     regions:
