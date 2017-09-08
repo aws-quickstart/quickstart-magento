@@ -783,20 +783,7 @@
                             },
                             "/install_magento.sh": {
                                 "source": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "https://",
-                                            {
-                                                "Ref": "QSS3BucketName"
-                                            },
-                                            ".s3.amazonaws.com/",
-                                            {
-                                                "Ref": "QSS3KeyPrefix"
-                                            },
-                                            "/scripts/install_magento.sh"
-                                        ]
-                                    ]
+                                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/install_magento.sh"
                                 },
                                 "mode": "000644",
                                 "owner": "root",
@@ -805,20 +792,7 @@
                             },
                             "/configure_magento.sh": {
                                 "source": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "https://",
-                                            {
-                                                "Ref": "QSS3BucketName"
-                                            },
-                                            ".s3.amazonaws.com/",
-                                            {
-                                                "Ref": "QSS3KeyPrefix"
-                                            },
-                                            "/scripts/configure_magento.sh"
-                                        ]
-                                    ]
+                                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/configure_magento.sh"
                                 },
                                 "mode": "000644",
                                 "owner": "root",
@@ -938,7 +912,7 @@
                                         ]
                                     ]
                                 },
-                                "mode": "000440",
+                                 "mode": "000440",
                                 "owner": "root",
                                 "group": "root"
                             }

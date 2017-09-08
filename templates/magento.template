@@ -622,20 +622,17 @@
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Join": [
-                        "/",
-                        [
-                            {
-                                "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/templates"
-                            },
-                            {
+                    "Fn::Sub": [
+                        "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/templates/${RDSScriptName}",
+                        {
+                            "RDSScriptName": {
                                 "Fn::If": [
                                     "UseAurora",
                                     "rdsaurora.template",
                                     "rdsmysql.template"
                                 ]
                             }
-                        ]
+                        }
                     ]
                 },
                 "Parameters": {
