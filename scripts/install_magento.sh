@@ -53,7 +53,7 @@ if [ -f ${PARAMS_FILE} ]; then
 	echo "Extracting parameter values from params file"
 	exportParams
 else
-	echo "Paramaters file not found or accessible."
+	echo "Parameters file not found or inaccessible."
     exit 1
 fi
 
