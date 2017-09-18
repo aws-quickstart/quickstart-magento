@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Magento 2.1 RDS MySQL Template",
+    "Description": "Magento 2.1 Amazon Aurora Template",
     "Parameters": {
         "DBAllocatedStorage": {
             "ConstraintDescription": "must be between 5 and 4096 GiB. If Iops specified, AllocatedStorage must be at least 100 GiB and with minimum Iops value of 1000",
@@ -50,7 +50,7 @@
                 "db.m1.xlarge"
             ],
             "ConstraintDescription": "Must select a valid database instance type.",
-            "Default": "db.m4.2xlarge",
+            "Default": "db.r3.2xlarge",
             "Description": "The name of the compute and memory capacity class of the DB instance.",
             "Type": "String"
         },
@@ -103,8 +103,8 @@
         },
         "DBName": {
             "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
-            "Default": "QuickstartMySQLDB",
-            "Description": "Name of MySQL DB for Magento Stack",
+            "Default": "QuickstartAuroraDB",
+            "Description": "Name of Amazon Aurora DB for Magento Stack",
             "MaxLength": "64",
             "MinLength": "5",
             "Type": "String"
@@ -120,7 +120,7 @@
             "Type": "String"
         },
         "RDSSecurityGroup": {
-            "Description": "MySql Security Group",
+            "Description": "Amazon Aurora Security Group",
             "Type": "AWS::EC2::SecurityGroup::Id"
         },
         "Subnets": {
@@ -131,7 +131,7 @@
         "VPC": {
             "AllowedPattern": "vpc-[0-9a-z]{8}",
             "Default": "vpc-xxxxxxxx",
-            "Description": "VPC-ID of your existing Virtual Private Cloud (VPC) where you want to depoy RDS.",
+            "Description": "VPC-ID of your existing Virtual Private Cloud (VPC) where you want to deploy Amazon Aurora.",
             "Type": "AWS::EC2::VPC::Id"
         }
     },
@@ -143,31 +143,33 @@
                 },
                 "io1"
             ]
+        },
+        "IsDBMultiAZ": {
+            "Fn::Equals": [
+                {
+                    "Ref": "DBMultiAZ"
+                },
+                "true"
+            ]
         }
     },
     "Resources": {
-        "MySQLDBSubnetGroup": {
+        "AuroraDBSubnetGroup": {
             "Type": "AWS::RDS::DBSubnetGroup",
             "Properties": {
-                "DBSubnetGroupDescription": "Subnets available for the RDS MySQL DB Instance",
+                "DBSubnetGroupDescription": "Subnets available for the Amazon Aurora DB Instance",
                 "SubnetIds": {
                     "Ref": "Subnets"
                 }
             }
         },
-        "MySQLDB": {
-            "Type": "AWS::RDS::DBInstance",
+        "AuroraDBCluster": {
+            "Type": "AWS::RDS::DBCluster",
             "Properties": {
-                "DBName": {
+                "DatabaseName": {
                     "Ref": "DBName"
                 },
-                "AllocatedStorage": {
-                    "Ref": "DBAllocatedStorage"
-                },
-                "DBInstanceClass": {
-                    "Ref": "DBInstanceClass"
-                },
-                "Engine": "MySQL",
+                "Engine": "aurora",
                 "EngineVersion": "5.6",
                 "MasterUsername": {
                     "Ref": "DBMasterUsername"
@@ -175,25 +177,37 @@
                 "MasterUserPassword": {
                     "Ref": "DBMasterUserPassword"
                 },
-                "DBSubnetGroupName": {
-                    "Ref": "MySQLDBSubnetGroup"
+                "BackupRetentionPeriod": {
+                    "Ref": "DBBackupRetentionPeriod"
                 },
-                "VPCSecurityGroups": [
+                "DBSubnetGroupName": {
+                    "Ref": "AuroraDBSubnetGroup"
+                },
+                "VpcSecurityGroupIds": [
                     {
                         "Ref": "RDSSecurityGroup"
                     }
                 ],
-                "MultiAZ": {
-                    "Ref": "DBMultiAZ"
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "AuroraDB-YOUR-STACK-REPLACEME"
+                    }
+                ]
+            }
+        },
+        "AuroraDB1": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "Engine": "aurora",
+                "DBClusterIdentifier": {
+                    "Ref": "AuroraDBCluster"
                 },
-                "StorageType": {
-                    "Ref": "DBStorageType"
+                "DBInstanceClass": {
+                    "Ref": "DBInstanceClass"
                 },
                 "AutoMinorVersionUpgrade": {
                     "Ref": "DBAutoMinorVersionUpgrade"
-                },
-                "BackupRetentionPeriod": {
-                    "Ref": "DBBackupRetentionPeriod"
                 },
                 "Iops": {
                     "Fn::If": [
@@ -209,7 +223,40 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "MySQLDB-YOUR-STACK-REPLACEME"
+                        "Value": "AuroraDB-YOUR-STACK-REPLACEME"
+                    }
+                ]
+            }
+        },
+        "AuroraDB2": {
+            "Type": "AWS::RDS::DBInstance",
+            "Condition": "IsDBMultiAZ",
+            "Properties": {
+                "Engine": "aurora",
+                "DBClusterIdentifier": {
+                    "Ref": "AuroraDBCluster"
+                },
+                "DBInstanceClass": {
+                    "Ref": "DBInstanceClass"
+                },
+                "AutoMinorVersionUpgrade": {
+                    "Ref": "DBAutoMinorVersionUpgrade"
+                },
+                "Iops": {
+                    "Fn::If": [
+                        "IOPSStorageType",
+                        {
+                            "Ref": "DBIops"
+                        },
+                        {
+                            "Ref": "AWS::NoValue"
+                        }
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "AuroraDB-YOUR-STACK-REPLACEME"
                     }
                 ]
             }
@@ -224,14 +271,14 @@
                     [
                         {
                             "Fn::GetAtt": [
-                                "MySQLDB",
+                                "AuroraDBCluster",
                                 "Endpoint.Address"
                             ]
                         },
                         ":",
                         {
                             "Fn::GetAtt": [
-                                "MySQLDB",
+                                "AuroraDBCluster",
                                 "Endpoint.Port"
                             ]
                         },
@@ -244,7 +291,7 @@
             }
         },
         "DBName": {
-            "Description": "MySQL DBName",
+            "Description": "Amazon Aurora DBName",
             "Value": {
                 "Ref": "DBName"
             }
@@ -257,7 +304,7 @@
                     [
                         {
                             "Fn::GetAtt": [
-                                "MySQLDB",
+                                "AuroraDBCluster",
                                 "Endpoint.Address"
                             ]
                         }
@@ -273,7 +320,7 @@
                     [
                         {
                             "Fn::GetAtt": [
-                                "MySQLDB",
+                                "AuroraDBCluster",
                                 "Endpoint.Port"
                             ]
                         }

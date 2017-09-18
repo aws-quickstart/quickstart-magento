@@ -33,19 +33,35 @@
                 },
                 {
                     "Label": {
-                        "default": "Amazon RDS Configuration"
+                        "default": "Amazon RDS (Common) Configuration"
                     },
                     "Parameters": [
+                        "DBEngineType",
                         "DBAllocatedStorage",
                         "DBAutoMinorVersionUpgrade",
                         "DBBackupRetentionPeriod",
-                        "DBInstanceClass",
                         "DBName",
                         "DBIops",
                         "DBMasterUsername",
                         "DBMasterUserPassword",
                         "DBMultiAZ",
                         "DBStorageType"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Amazon Aurora Specific Configuration"
+                    },
+                    "Parameters": [
+                        "AuroraDBInstanceClass"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Amazon RDS for MySQL Specific Configuration"
+                    },
+                    "Parameters": [
+                        "MySQLDBInstanceClass"
                     ]
                 },
                 {
@@ -106,6 +122,9 @@
                 "AdminUserName": {
                     "default": "Administrator User Name"
                 },
+                "DBEngineType": {
+                    "default": "DB Engine"
+                },
                 "DBAllocatedStorage": {
                     "default": "DB Storage Size (in GiB)"
                 },
@@ -115,8 +134,11 @@
                 "DBBackupRetentionPeriod": {
                     "default": "DB Backup Retention Period"
                 },
-                "DBInstanceClass": {
-                    "default": "DB Instance Type"
+                "AuroraDBInstanceClass": {
+                    "default": "Amazon Aurora DB Instance Type"
+                },
+                "MySQLDBInstanceClass": {
+                    "default": "Amazon RDS for MySQL DB Instance Type"
                 },
                 "DBIops": {
                     "default": "DB IOPS"
@@ -128,7 +150,7 @@
                     "default": "DB Master Username"
                 },
                 "DBMultiAZ": {
-                    "default": "Enable Multi-AZ Ddeployment For DB Instance"
+                    "default": "Enable Multi-AZ Deployment For DB Instance"
                 },
                 "DBName": {
                     "default": "DB Name"
@@ -154,16 +176,16 @@
                 "MagentoCurrency": {
                     "default": "Magento Currency"
                 },
-				"MagentoLanguage": {
+                "MagentoLanguage": {
                     "default": "Magento Language"
                 },
-				"MagentoTimezone": {
+                "MagentoTimezone": {
                     "default": "Magento Timezone"
                 },
                 "MagentoReleaseMedia": {
                     "default": "S3 File Path To Download Magento"
                 },
-				"NotificationEmail": {
+                "NotificationEmail": {
                     "default": "Email Address To Notify"
                 },
                 "PrivateSubnet1ID": {
@@ -237,6 +259,15 @@
             "Description": "Username of the Magento site administrator",
             "Type": "String"
         },
+        "DBEngineType": {
+            "Description": "Engine to use for Magento database",
+            "Type": "String",
+            "AllowedValues": [
+                "MySQL",
+                "Amazon Aurora"
+            ],
+            "Default": "Amazon Aurora"
+        },
         "DBAllocatedStorage": {
             "ConstraintDescription": "Must be between 5 and 4096 GiB. If Iops specified, AllocatedStorage must be at least 100 GiB and with minimum Iops value of 1000",
             "Default": "16",
@@ -259,34 +290,58 @@
             "Description": "The number of days for which automatic DB snapshots are retained.",
             "Type": "String"
         },
-        "DBInstanceClass": {
+        "MySQLDBInstanceClass": {
             "AllowedValues": [
-                "db.t1.micro",
+                "db.m1.large",
+                "db.m1.medium",
                 "db.m1.small",
-                "db.m3.medium",
+                "db.m1.xlarge",
+                "db.m2.2xlarge",
+                "db.m2.2xlarge",
+                "db.m2.xlarge",
                 "db.m3.large",
+                "db.m3.medium",
                 "db.m3.xlarge",
-                "db.m3.2xlarge",
+                "db.m4.10xlarge",
                 "db.m4.2xlarge",
-                "db.r3.large",
-                "db.r3.xlarge",
+                "db.m4.2xlarge",
+                "db.m4.4xlarge",
+                "db.m4.larg",
+                "db.m4.xlarge",
+                "db.r3.2xlarge",
                 "db.r3.2xlarge",
                 "db.r3.4xlarge",
+                "db.r3.4xlarge",
                 "db.r3.8xlarge",
-                "db.t2.micro",
-                "db.t2.small",
+                "db.r3.8xlarge",
+                "db.r3.large",
+                "db.r3.large",
+                "db.r3.xlarge",
+                "db.r3.xlarge",
+                "db.t1.micro",
+                "db.t2.large",
                 "db.t2.medium",
-                "db.m2.xlarge",
-                "db.m2.2xlarge",
-                "db.m2.4xlarge",
-                "db.cr1.8xlarge",
-                "db.m1.medium",
-                "db.m1.large",
-                "db.m1.xlarge"
+                "db.t2.micro",
+                "db.t2.small"
             ],
             "ConstraintDescription": "Must select a valid database instance type.",
             "Default": "db.m4.2xlarge",
-            "Description": "The name of the compute and memory capacity class of the DB instance.",
+            "Description": "The name of the compute and memory capacity class of the Amazon RDS for MySQL DB instance, if selected.",
+            "Type": "String"
+        },
+        "AuroraDBInstanceClass": {
+            "AllowedValues": [
+                "db.r3.2xlarge",
+                "db.r3.4xlarge",
+                "db.r3.8xlarge",
+                "db.r3.large",
+                "db.r3.xlarge",
+                "db.t2.medium",
+                "db.t2.small"
+            ],
+            "ConstraintDescription": "Must select a valid database instance type.",
+            "Default": "db.r3.2xlarge",
+            "Description": "The name of the compute and memory capacity class of the Amazon Aurora DB instance, if selected.",
             "Type": "String"
         },
         "DBIops": {
@@ -339,7 +394,7 @@
             "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
             "ConstraintDescription": "Must begin with a letter and contain only alphanumeric characters.",
             "Default": "QuickstartMySQLDB",
-            "Description": "Name of the initial database for the MySQL RDS Instance.",
+            "Description": "Name of the initial database for the Amazon RDS for MySQL Instance.",
             "MaxLength": "64",
             "MinLength": "5",
             "Type": "String"
@@ -411,12 +466,12 @@
             "Description": "Currency you’d like to use to display prices in the Magento store (Check here for the supported currency command http://devdocs.magento.com/guides/v2.0/install-gde/install/cli/install-cli-install.html)",
             "Type": "String"
         },
-		"MagentoLanguage": {
+        "MagentoLanguage": {
             "Default": "en_US",
             "Description": "The language you’d like to use for the text that appears throughout the Magento store (Check here for the supported Language command http://devdocs.magento.com/guides/v2.0/install-gde/install/cli/install-cli-install.html)",
             "Type": "String"
         },
-		"MagentoTimezone": {
+        "MagentoTimezone": {
             "Default": "America/Los_Angeles",
             "Description": "The time zone setting that specifies the primary market served by the Magento store",
             "Type": "String"
@@ -426,7 +481,7 @@
             "Description": "Amazon S3 path to download magento .tar.gz file (https://s3.amazonaws.com/mybucket/Magento-CE-2_1_3_sample_data_tar_gz-2016-12-13-09-27-46.tar.gz)",
             "Type": "String"
         },
-		"NotificationEmail": {
+        "NotificationEmail": {
             "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
             "ConstraintDescription": "Must be a valid email address.",
             "Description": "Email address to notify if there are any scaling operations",
@@ -533,64 +588,14 @@
             "Type": "Number"
         }
     },
-    "Mappings": {
-        "AWSInfoRegionMap": {
-            "ap-northeast-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-northeast-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-south-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-southeast-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-southeast-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ca-central-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "eu-central-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "eu-west-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "sa-east-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-east-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-east-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-gov-west-1": {
-                "Partition": "aws-us-gov",
-                "QuickStartS3URL": "https://s3-us-gov-west-1.amazonaws.com"
-            },
-            "us-west-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-west-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            }
+    "Conditions": {
+        "UseAurora": {
+            "Fn::Equals": [
+                {
+                    "Ref": "DBEngineType"
+                },
+                "Amazon Aurora"
+            ]
         }
     },
     "Resources": {
@@ -598,27 +603,7 @@
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Join": [
-                        "/",
-                        [
-                            {
-                                "Fn::FindInMap": [
-                                    "AWSInfoRegionMap",
-                                    {
-                                        "Ref": "AWS::Region"
-                                    },
-                                    "QuickStartS3URL"
-                                ]
-                            },
-                            {
-                                "Ref": "QSS3BucketName"
-                            },
-                            {
-                                "Ref": "QSS3KeyPrefix"
-                            },
-                            "templates/securitygroups.template"
-                        ]
-                    ]
+                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/templates/securitygroups.template"
                 },
                 "Parameters": {
                     "AccessCIDR": {
@@ -633,37 +618,28 @@
                 }
             }
         },
-        "RDSMySQL": {
+        "RDSStack": {
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Join": [
-                        "/",
-                        [
-                            {
-                                "Fn::FindInMap": [
-                                    "AWSInfoRegionMap",
-                                    {
-                                        "Ref": "AWS::Region"
-                                    },
-                                    "QuickStartS3URL"
+                    "Fn::Sub": [
+                        "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/templates/${RDSScriptName}",
+                        {
+                            "RDSScriptName": {
+                                "Fn::If": [
+                                    "UseAurora",
+                                    "rdsaurora.template",
+                                    "rdsmysql.template"
                                 ]
-                            },
-                            {
-                                "Ref": "QSS3BucketName"
-                            },
-                            {
-                                "Ref": "QSS3KeyPrefix"
-                            },
-                            "templates/rdsmysql.template"
-                        ]
+                            }
+                        }
                     ]
                 },
                 "Parameters": {
                     "VPC": {
                         "Ref": "VPCID"
                     },
-                    "MySQLRDSSecurityGroup": {
+                    "RDSSecurityGroup": {
                         "Fn::GetAtt": [
                             "SecurityGroupStack",
                             "Outputs.MySQLRDSSecurityGroup"
@@ -692,7 +668,15 @@
                         "Ref": "DBBackupRetentionPeriod"
                     },
                     "DBInstanceClass": {
-                        "Ref": "DBInstanceClass"
+                        "Fn::If": [
+                            "UseAurora",
+                            {
+                                "Ref": "AuroraDBInstanceClass"
+                            },
+                            {
+                                "Ref": "MySQLDBInstanceClass"
+                            }
+                        ]
                     },
                     "DBName": {
                         "Ref": "DBName"
@@ -719,27 +703,7 @@
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Join": [
-                        "/",
-                        [
-                            {
-                                "Fn::FindInMap": [
-                                    "AWSInfoRegionMap",
-                                    {
-                                        "Ref": "AWS::Region"
-                                    },
-                                    "QuickStartS3URL"
-                                ]
-                            },
-                            {
-                                "Ref": "QSS3BucketName"
-                            },
-                            {
-                                "Ref": "QSS3KeyPrefix"
-                            },
-                            "templates/elasticache.template"
-                        ]
-                    ]
+                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/templates/elasticache.template"
                 },
                 "Parameters": {
                     "VPC": {
@@ -780,27 +744,7 @@
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Join": [
-                        "/",
-                        [
-                            {
-                                "Fn::FindInMap": [
-                                    "AWSInfoRegionMap",
-                                    {
-                                        "Ref": "AWS::Region"
-                                    },
-                                    "QuickStartS3URL"
-                                ]
-                            },
-                            {
-                                "Ref": "QSS3BucketName"
-                            },
-                            {
-                                "Ref": "QSS3KeyPrefix"
-                            },
-                            "templates/webserver.template"
-                        ]
-                    ]
+                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/templates/webserver.template"
                 },
                 "Parameters": {
                     "KeyPair": {
@@ -897,8 +841,8 @@
                     },
                     "MySQLEndPointAddress": {
                         "Fn::GetAtt": [
-                            "RDSMySQL",
-                            "Outputs.MySQLEndPointAddress"
+                            "RDSStack",
+                            "Outputs.RDSEndPointAddress"
                         ]
                     },
                     "ElastiCacheEndpoint": {
