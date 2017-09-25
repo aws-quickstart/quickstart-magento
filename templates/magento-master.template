@@ -36,35 +36,20 @@
                 },
                 {
                     "Label": {
-                        "default": "Amazon RDS (Common) Configuration"
+                        "default": "Amazon RDS (Aurora/MySQL) Configuration"
                     },
                     "Parameters": [
                         "DBEngineType",
-                        "DBAllocatedStorage",
-                        "DBAutoMinorVersionUpgrade",
-                        "DBBackupRetentionPeriod",
+                        "DBInstanceClass",
                         "DBName",
-                        "DBIops",
+                        "DBMultiAZ",
                         "DBMasterUsername",
                         "DBMasterUserPassword",
-                        "DBMultiAZ",
-                        "DBStorageType"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "Amazon Aurora Specific Configuration"
-                    },
-                    "Parameters": [
-                        "AuroraDBInstanceClass"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "Amazon RDS for MySQL Specific Configuration"
-                    },
-                    "Parameters": [
-                        "MySQLDBInstanceClass"
+                        "DBAllocatedStorage",
+                        "DBStorageType",
+                        "DBIops",
+                        "DBAutoMinorVersionUpgrade",
+                        "DBBackupRetentionPeriod"
                     ]
                 },
                 {
@@ -135,16 +120,13 @@
                     "default": "DB Storage Size (in GiB)"
                 },
                 "DBAutoMinorVersionUpgrade": {
-                    "default": "Automatic Upgrade To New MySQL Minor Versions"
+                    "default": "Automatic Upgrade To New Amazon Aurora/MySQL Minor Versions"
                 },
                 "DBBackupRetentionPeriod": {
                     "default": "DB Backup Retention Period"
                 },
-                "AuroraDBInstanceClass": {
-                    "default": "Amazon Aurora DB Instance Type"
-                },
-                "MySQLDBInstanceClass": {
-                    "default": "Amazon RDS for MySQL DB Instance Type"
+                "DBInstanceClass": {
+                    "default": "Amazon Aurora/MySQL DB Instance Type"
                 },
                 "DBIops": {
                     "default": "DB IOPS"
@@ -279,11 +261,11 @@
             "Type": "List<AWS::EC2::AvailabilityZone::Name>"
         },
         "DBEngineType": {
-            "Description": "Engine to use for Magento database",
+            "Description": "Database engine to use for Magento database",
             "Type": "String",
             "AllowedValues": [
-                "MySQL",
-                "Amazon Aurora"
+                "Amazon Aurora",
+                "MySQL"
             ],
             "Default": "Amazon Aurora"
         },
@@ -309,58 +291,38 @@
             "Description": "The number of days for which automatic DB snapshots are retained.",
             "Type": "String"
         },
-        "MySQLDBInstanceClass": {
+        "DBInstanceClass": {
             "AllowedValues": [
-                "db.m1.large",
-                "db.m1.medium",
-                "db.m1.small",
-                "db.m1.xlarge",
-                "db.m2.2xlarge",
-                "db.m2.2xlarge",
-                "db.m2.xlarge",
-                "db.m3.large",
-                "db.m3.medium",
-                "db.m3.xlarge",
-                "db.m4.10xlarge",
-                "db.m4.2xlarge",
+                "db.t2.micro",
+                "db.t2.small",
+                "db.t2.medium",
+                "db.t2.large",
+                "db.m4.large",
+                "db.m4.xlarge",
                 "db.m4.2xlarge",
                 "db.m4.4xlarge",
-                "db.m4.larg",
-                "db.m4.xlarge",
-                "db.r3.2xlarge",
-                "db.r3.2xlarge",
-                "db.r3.4xlarge",
-                "db.r3.4xlarge",
-                "db.r3.8xlarge",
-                "db.r3.8xlarge",
-                "db.r3.large",
+                "db.m4.10xlarge",
                 "db.r3.large",
                 "db.r3.xlarge",
-                "db.r3.xlarge",
-                "db.t1.micro",
-                "db.t2.large",
-                "db.t2.medium",
-                "db.t2.micro",
-                "db.t2.small"
-            ],
-            "ConstraintDescription": "Must select a valid database instance type.",
-            "Default": "db.m4.2xlarge",
-            "Description": "The name of the compute and memory capacity class of the Amazon RDS for MySQL DB instance, if selected.",
-            "Type": "String"
-        },
-        "AuroraDBInstanceClass": {
-            "AllowedValues": [
                 "db.r3.2xlarge",
                 "db.r3.4xlarge",
                 "db.r3.8xlarge",
-                "db.r3.large",
-                "db.r3.xlarge",
-                "db.t2.medium",
-                "db.t2.small"
+                "db.m3.medium",
+                "db.m3.large",
+                "db.m3.xlarge",
+                "db.m3.2xlarge",
+                "db.m2.xlarge",
+                "db.m2.2xlarge",
+                "db.m2.4xlarge",
+                "db.m1.xlarge",
+                "db.m1.small",
+                "db.m1.medium",
+                "db.m1.large",
+                "db.t1.micro"
             ],
             "ConstraintDescription": "Must select a valid database instance type.",
             "Default": "db.r3.2xlarge",
-            "Description": "The name of the compute and memory capacity class of the Amazon Aurora DB instance, if selected.",
+            "Description": "The name of the compute and memory capacity class of the Amazon RDS (Aurora/MySQL) DB instance.",
             "Type": "String"
         },
         "DBIops": {
@@ -413,7 +375,7 @@
             "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
             "ConstraintDescription": "Must begin with a letter and contain only alphanumeric characters.",
             "Default": "MagentoQuickstartDB",
-            "Description": "Name of the Amazon RDS for MySQL or Amazon Aurora Magento database.",
+            "Description": "Name of Magento Quick Start database.",
             "MaxLength": "64",
             "MinLength": "5",
             "Type": "String"
@@ -573,16 +535,16 @@
         },
         "QSS3BucketName": {
             "AllowedPattern": "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$",
-            "ConstraintDescription": "AWS Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
+            "ConstraintDescription": "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
             "Default": "quickstart-reference",
-            "Description": "S3 bucket name for the AWS Quick Start assets.AWS Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
+            "Description": "S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
             "Type": "String"
         },
         "QSS3KeyPrefix": {
-            "AllowedPattern": "^[0-9a-zA-Z-]+(/[0-9a-zA-Z-]+)*$",
-            "ConstraintDescription": "AWS Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
-            "Default": "magento/latest",
-            "Description": "S3 key prefix for the AWS Quick Start assets. AWS Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
+            "AllowedPattern": "^[0-9a-zA-Z-/]*$",
+            "ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
+            "Default": "magento/latest/",
+            "Description": "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
             "Type": "String"
         },
         "SSLCertificateId": {
@@ -663,12 +625,81 @@
             ]
         }
     },
+    "Rules": {
+        "AuroraDBInstanceTypeRule": {
+            "RuleCondition": {
+                "Fn::Equals": [
+                    {
+                        "Ref": "DBEngineType"
+                    },
+                    "Amazon Aurora"
+                ]
+            },
+            "Assertions": [
+                {
+                    "Assert": {
+                        "Fn::Contains": [
+                            [
+                                "db.r3.large",
+                                "db.r3.xlarge",
+                                "db.r3.2xlarge",
+                                "db.r3.4xlarge",
+                                "db.r3.8xlarge",
+                                "db.t2.small",
+                                "db.t2.medium"
+                            ],
+                            {
+                                "Ref": "DBInstanceClass"
+                            }
+                        ]
+                    },
+                    "AssertDescription": "Amazon Aurora does not currently support this DB instance class."
+                }
+            ]
+        },
+        "AuroraSupportedRegionsRule": {
+            "RuleCondition": {
+                "Fn::Equals": [
+                    {
+                        "Ref": "DBEngineType"
+                    },
+                    "Amazon Aurora"
+                ]
+            },
+            "Assertions": [
+                {
+                    "Assert": {
+                        "Fn::Contains": [
+                            [
+                                "ap-northeast-1",
+                                "ap-northeast-2",
+                                "ap-south-1",
+                                "ap-southeast-2",
+                                "ca-central-1",
+                                "eu-central-1",
+                                "eu-west-1",
+                                "eu-west-2",
+                                "us-east-1",
+                                "us-east-2",
+                                "us-west-1",
+                                "us-west-2"
+                            ],
+                            {
+                                "Ref": "AWS::Region"
+                            }
+                        ]
+                    },
+                    "AssertDescription": "Amazon Aurora is not currently supported in this region"
+                }
+            ]
+        }
+    },
     "Resources": {
         "VPCStack": {
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/submodules/quickstart-aws-vpc/templates/aws-vpc.template"
+                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}submodules/quickstart-aws-vpc/templates/aws-vpc.template"
                 },
                 "Parameters": {
                     "AvailabilityZones": {
@@ -706,7 +737,7 @@
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/submodules/quickstart-linux-bastion/templates/linux-bastion.template"
+                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}submodules/quickstart-linux-bastion/templates/linux-bastion.template"
                 },
                 "Parameters": {
                     "BastionAMIOS": {
@@ -746,7 +777,7 @@
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "TemplateURL": {
-                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/templates/magento.template"
+                    "Fn::Sub": "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/magento.template"
                 },
                 "Parameters": {
                     "AccessCIDR": {
@@ -779,11 +810,8 @@
                     "DBBackupRetentionPeriod": {
                         "Ref": "DBBackupRetentionPeriod"
                     },
-                    "AuroraDBInstanceClass": {
-                        "Ref": "AuroraDBInstanceClass"
-                    },
-                    "MySQLDBInstanceClass": {
-                        "Ref": "MySQLDBInstanceClass"
+                    "DBInstanceClass": {
+                        "Ref": "DBInstanceClass"
                     },
                     "DBIops": {
                         "Ref": "DBIops"

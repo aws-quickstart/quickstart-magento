@@ -191,7 +191,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "AuroraDB-YOUR-STACK-REPLACEME"
+                        "Value": {"Fn::Sub": "AuroraDB-${AWS::StackName}"}
                     }
                 ]
             }
@@ -223,7 +223,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "AuroraDB-YOUR-STACK-REPLACEME"
+                        "Value": {"Fn::Sub": "AuroraDB-${AWS::StackName}"}
                     }
                 ]
             }
@@ -256,7 +256,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "AuroraDB-YOUR-STACK-REPLACEME"
+                        "Value": {"Fn::Sub": "AuroraDB-${AWS::StackName}"}
                     }
                 ]
             }

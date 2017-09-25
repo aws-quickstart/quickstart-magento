@@ -53,6 +53,6 @@
   },
   {
     "ParameterKey": "QSS3KeyPrefix",
-    "ParameterValue": "quickstart-magento"
+    "ParameterValue": "quickstart-magento/"
   }
 ]

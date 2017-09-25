@@ -20,11 +20,11 @@ global:
   reporting: true
 
 tests:
-  quickstart-magento-mysqlt1:
-    s3bucket: sk-quickstarts
-    parameter_input: quickstart-magento-mysqlt1.json
-    template_file: magento-master.template
-    regions:
+  # quickstart-magento-mysqlt1:
+  #   s3bucket: sk-quickstarts
+  #   parameter_input: quickstart-magento-mysqlt1.json
+  #   template_file: magento-master.template
+  #   regions:
 #      - ap-southeast-2
 #      - eu-central-1
 #      - eu-west-1
@@ -32,14 +32,15 @@ tests:
 #      - us-east-2
 #      - us-west-2
 
-#  quickstart-magento-aurora1:
-#    s3bucket: sk-quickstarts
-#    parameter_input: quickstart-magento-aurora1.json
-#    template_file: magento-master.template
-#    regions:
+  quickstart-magento-aurora1:
+    s3bucket: sk-quickstarts
+    parameter_input: quickstart-magento-aurora1.json
+    template_file: magento-master.template
+    regions:
 #      - ap-southeast-2
 #      - eu-central-1
 #      - eu-west-1
       - us-east-1
+      - sa-east-1
 #     - us-east-2
 #      - us-west-2

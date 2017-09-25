@@ -42,9 +42,5 @@
   {
     "ParameterKey": "AdminPassword",
     "ParameterValue": "$[alfred_genpass_32]"
-  },
-  {
-    "ParameterKey": "DBEngineType",
-    "ParameterValue": "Amazon Aurora"
   }
 ]

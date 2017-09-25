@@ -44,15 +44,11 @@
     "ParameterValue": "Pa$$W0rd1234"
   },
   {
-    "ParameterKey": "DBEngineType",
-    "ParameterValue": "Amazon Aurora"
-  },
-  {
     "ParameterKey": "QSS3BucketName",
     "ParameterValue": "sk-quickstarts"
   },
   {
     "ParameterKey": "QSS3KeyPrefix",
-    "ParameterValue": "quickstart-magento"
+    "ParameterValue": "quickstart-magento/"
   }
 ]
