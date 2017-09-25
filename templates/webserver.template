@@ -608,6 +608,7 @@
             "Type": "AWS::EFS::FileSystem",
             "Properties": {
                 "PerformanceMode": "generalPurpose",
+                "Encrypted": true,
                 "FileSystemTags": [
                     {
                         "Key": "Name",
