@@ -90,7 +90,7 @@
         },
         "MagentoReleaseMedia": {
             "Default": "",
-            "Description": "Amazon S3 path to download magento .tar.gz file (https://s3.amazonaws.com/mybucket/Magento-CE-2_1_3_sample_data_tar_gz-2016-12-13-09-27-46.tar.gz)",
+            "Description": "Amazon S3 path to download magento .tar.gz file (https://s3.amazonaws.com/mybucket/Magento-CE-2.1.9_sample_data-2017-09-13-03-57-21.tar.gz)",
             "Type": "String"
         },
         "MySQLEndPointAddress": {
@@ -110,14 +110,14 @@
             "Default": "quickstart-reference",
             "Description": "S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
             "Type": "String"
-         },
-         "QSS3KeyPrefix": {
+        },
+        "QSS3KeyPrefix": {
             "AllowedPattern": "^[0-9a-zA-Z-/]*$",
             "ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
             "Default": "magento/latest/",
             "Description": "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
             "Type": "String"
-         },
+        },
         "SSLCertificateId": {
             "Default": "",
             "Description": "The ARN of the SSL certificate to use for the webserver. [optional]",
@@ -608,6 +608,7 @@
             "Type": "AWS::EFS::FileSystem",
             "Properties": {
                 "PerformanceMode": "generalPurpose",
+                "Encrypted": true,
                 "FileSystemTags": [
                     {
                         "Key": "Name",
@@ -912,7 +913,7 @@
                                         ]
                                     ]
                                 },
-                                 "mode": "000440",
+                                "mode": "000440",
                                 "owner": "root",
                                 "group": "root"
                             }

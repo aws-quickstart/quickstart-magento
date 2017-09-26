@@ -29,8 +29,8 @@ cd
 #echo "Running command aws s3 cp ${magentourl} magento.tar.gz"
 #aws s3 cp $magentourl magento.tar.gz
 #if [ $? -ne 0 ]; then
-#	echo "Error downloading media from s3"
-#	exit 1
+#    echo "Error downloading media from s3"
+#    exit 1
 #fi
 [ -f "magento.tar.gz" ] && echo "Media file Found" || echo "Media file Not found"
 
