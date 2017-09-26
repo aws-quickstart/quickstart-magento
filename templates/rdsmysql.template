@@ -209,7 +209,9 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": {"Fn::Sub": "MySQLDB-${AWS::StackName}"}
+                        "Value": {
+                            "Fn::Sub": "MySQLDB-${AWS::StackName}"
+                        }
                     }
                 ]
             }
