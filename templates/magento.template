@@ -241,15 +241,6 @@
             "Description": "Username of the Magento site administrator",
             "Type": "String"
         },
-        "DBEngineType": {
-            "Description": "Engine to use for Magento database",
-            "Type": "String",
-            "AllowedValues": [
-                "Amazon Aurora",
-                "MySQL"
-            ],
-            "Default": "Amazon Aurora"
-        },
         "DBAllocatedStorage": {
             "ConstraintDescription": "Must be between 5 and 4096 GiB. If Iops specified, AllocatedStorage must be at least 100 GiB and with minimum Iops value of 1000",
             "Default": "16",
@@ -270,6 +261,15 @@
         "DBBackupRetentionPeriod": {
             "Default": "7",
             "Description": "The number of days for which automatic DB snapshots are retained.",
+            "Type": "String"
+        },
+        "DBEngineType": {
+            "AllowedValues": [
+                "Amazon Aurora",
+                "MySQL"
+            ],
+            "Default": "Amazon Aurora",
+            "Description": "Engine to use for Magento database",
             "Type": "String"
         },
         "DBInstanceClass": {
@@ -433,14 +433,14 @@
             "Description": "The language you’d like to use for the text that appears throughout the Magento store (Check here for the supported Language command http://devdocs.magento.com/guides/v2.0/install-gde/install/cli/install-cli-install.html)",
             "Type": "String"
         },
-        "MagentoTimezone": {
-            "Default": "America/Los_Angeles",
-            "Description": "The time zone setting that specifies the primary market served by the Magento store",
-            "Type": "String"
-        },
         "MagentoReleaseMedia": {
             "Default": "",
             "Description": "Amazon S3 path to download magento .tar.gz file (https://s3.amazonaws.com/mybucket/Magento-CE-2.1.9_sample_data-2017-09-13-03-57-21.tar.gz)",
+            "Type": "String"
+        },
+        "MagentoTimezone": {
+            "Default": "America/Los_Angeles",
+            "Description": "The time zone setting that specifies the primary market served by the Magento store",
             "Type": "String"
         },
         "NotificationEmail": {
@@ -573,22 +573,22 @@
             "Assertions": [
                 {
                     "Assert": {
-                        "Fn::Not": [
+                        "Fn::Contains": [
+                            [
+                                "db.r3.large",
+                                "db.r3.xlarge",
+                                "db.r3.2xlarge",
+                                "db.r3.4xlarge",
+                                "db.r3.8xlarge",
+                                "db.t2.small",
+                                "db.t2.medium"
+                            ],
                             {
-                                "Fn::Contains": [
-                                    [
-                                        "ap-southeast-1",
-                                        "cn-northwest-1",
-                                        "sa-east-1"
-                                    ],
-                                    {
-                                        "Ref": "AWS::Region"
-                                    }
-                                ]
+                                "Ref": "DBInstanceClass"
                             }
                         ]
                     },
-                    "AssertDescription": "Amazon Aurora is not currently supported in this region"
+                    "AssertDescription": "Amazon Aurora does not currently support this DB instance class."
                 }
             ]
         },
@@ -604,23 +604,18 @@
             "Assertions": [
                 {
                     "Assert": {
-                        "Fn::Contains": [
-                            [
-                                "ap-northeast-1",
-                                "ap-northeast-2",
-                                "ap-south-1",
-                                "ap-southeast-2",
-                                "ca-central-1",
-                                "eu-central-1",
-                                "eu-west-1",
-                                "eu-west-2",
-                                "us-east-1",
-                                "us-east-2",
-                                "us-west-1",
-                                "us-west-2"
-                            ],
+                        "Fn::Not": [
                             {
-                                "Ref": "AWS::Region"
+                                "Fn::Contains": [
+                                    [
+                                        "ap-southeast-1",
+                                        "cn-northwest-1",
+                                        "sa-east-1"
+                                    ],
+                                    {
+                                        "Ref": "AWS::Region"
+                                    }
+                                ]
                             }
                         ]
                     },
