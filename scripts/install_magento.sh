@@ -288,6 +288,8 @@ server {
         include /etc/nginx/mime.types;
         listen 443 ssl default_server;
         server_name www.example.com;
+        # add Strict-Transport-Security to prevent man in the middle attacks
+        add_header Strict-Transport-Security "max-age=31536000";
         root $MAGE_ROOT/pub/;
 
         ssl_certificate /etc/ssl/certs/magento;
