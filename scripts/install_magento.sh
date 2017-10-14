@@ -286,7 +286,7 @@ upstream fastcgi_backend {
 server {
         set $MAGE_ROOT /var/www/html;
         include /etc/nginx/mime.types;
-        listen 443 ssl default_server;
+        listen 443 ssl http2 default_server;
         server_name www.example.com;
         root $MAGE_ROOT/pub/;
 
