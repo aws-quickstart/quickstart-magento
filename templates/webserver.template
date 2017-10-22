@@ -457,6 +457,7 @@
                         "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
                     ]
                 },
+                "HealthCheckType": "ELB",
                 "Tags": [
                     {
                         "Key": "Name",
