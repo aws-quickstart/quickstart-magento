@@ -213,6 +213,10 @@ Conditions:
     !Equals
     - !Ref DNSName
     - ''
+  DontUseSSL:
+    !Equals
+    - !Ref SSLCertificateId
+    - ''
 Resources:
   FileSystem:
     Type: AWS::EFS::FileSystem
@@ -628,8 +632,29 @@ Resources:
       - Key: stickiness.lb_cookie.duration_seconds
         Value: '30'
   ALBListener:
+    Condition: DontUseSSL
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port:
+        !If
+        - UseSSL
+        - 443
+        - 80
+      Protocol:
+        !If
+        - UseSSL
+        - HTTPS
+        - HTTP
+  ALBListenerSSL:
+    Condition: UseSSL
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
+      Certificates:
+      - CertificateArn: !Ref SSLCertificateId 
       DefaultActions:
       - Type: forward
         TargetGroupArn: !Ref ALBTargetGroup
@@ -650,7 +675,7 @@ Resources:
     Properties:
       Certificates:
       - CertificateArn: !Ref SSLCertificateId
-      ListenerArn: !Ref ALBListener
+      ListenerArn: !Ref ALBListenerSSL
 Outputs:
   URL:
     Description: The URL of the website
