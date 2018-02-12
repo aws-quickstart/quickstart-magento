@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Magento 2.1 Security Groups template
+Description: Magento 2.2 Security Groups template
 Parameters:
   AccessCIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
@@ -89,24 +89,13 @@ Resources:
         FromPort: '443'
         ToPort: '443'
         CidrIp: 0.0.0.0/0
-  EFSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Database Security Group (AWS Quick Start)
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: '2049'
-        ToPort: '2049'
-        CidrIp: !Ref VPCCIDR
-      SecurityGroupEgress:
-      - IpProtocol: tcp
-        FromPort: '80'
-        ToPort: '80'
+        FromPort: '465'
+        ToPort: '465'
         CidrIp: 0.0.0.0/0
       - IpProtocol: tcp
-        FromPort: '443'
-        ToPort: '443'
+        FromPort: '587'
+        ToPort: '587'
         CidrIp: 0.0.0.0/0
   ElastiCacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -135,14 +124,6 @@ Resources:
       ToPort: '3306'
       DestinationSecurityGroupId: !GetAtt MySQLRDSSecurityGroup.GroupId
       GroupId: !GetAtt WebServerSecurityGroup.GroupId
-  SecurityGroupRuleAppEFS:
-    Type: AWS::EC2::SecurityGroupEgress
-    Properties:
-      IpProtocol: tcp
-      FromPort: '2049'
-      ToPort: '2049'
-      DestinationSecurityGroupId: !GetAtt EFSSecurityGroup.GroupId
-      GroupId: !GetAtt WebServerSecurityGroup.GroupId
   SecurityGroupRuleAppCache:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
@@ -161,9 +142,6 @@ Outputs:
   WebServerSecurityGroup:
     Description: Web Server Security Group
     Value: !Ref WebServerSecurityGroup
-  EFSSecurityGroup:
-    Description: EFS Security Group
-    Value: !Ref EFSSecurityGroup
   ElastiCacheSecurityGroup:
     Description: Elasticache Security Group
     Value: !Ref ElastiCacheSecurityGroup

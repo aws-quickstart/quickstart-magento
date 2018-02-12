@@ -14,7 +14,6 @@ function exportParams() {
     adminuser=`grep 'AdminUserName' ${PARAMS_FILE} | awk -F'|' '{print $2}' | sed -e 's/^ *//g;s/ *$//g'`
     adminpassword=`grep 'AdminPassword' ${PARAMS_FILE} | awk -F'|' '{print $2}' | sed -e 's/^ *//g;s/ *$//g'`
     cachehost=`grep 'ElastiCacheEndpoint' ${PARAMS_FILE} | awk -F'|' '{print $2}' | sed -e 's/^ *//g;s/ *$//g'`
-    efsid=`grep 'FileSystem' ${PARAMS_FILE} | awk -F'|' '{print $2}' | sed -e 's/^ *//g;s/ *$//g'`
     magentourl=`grep 'MagentoReleaseMedia' ${PARAMS_FILE} | awk -F'|' '{print $2}' | sed -e 's/^ *//g;s/ *$//g'`
     certificateid=`grep 'SSLCertificateId' ${PARAMS_FILE} | awk -F'|' '{print $2}' | sed -e 's/^ *//g;s/ *$//g'`
     magentolanguage=`grep 'MagentoLanguage' ${PARAMS_FILE} | awk -F'|' '{print $2}' | sed -e 's/^ *//g;s/ *$//g'`
@@ -40,14 +39,13 @@ adminemail='NONE'
 adminuser='NONE'
 adminpassword='NONE'
 cachehost='NONE'
-efsid='NONE'
 magentourl='NONE'
 certificateid='NONE'
 magentolanguage='NONE'
 magentocurrency='NONE'
 magentotimezone='NONE'
 
-#install_magento.sh dbhost dbuser dbpassword dbname cname adminfirstname adminlastname adminemail adminuser adminpassword cachehost efsid magentourl certificateid magentolanguage magentocurrency magentotimezone
+#install_magento.sh dbhost dbuser dbpassword dbname cname adminfirstname adminlastname adminemail adminuser adminpassword cachehost magentourl certificateid magentolanguage magentocurrency magentotimezone
 
 if [ -f ${PARAMS_FILE} ]; then
     echo "Extracting parameter values from params file"
@@ -63,8 +61,26 @@ fi
 EC2_AVAIL_ZONE=`curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone`
 EC2_REGION="`echo \"$EC2_AVAIL_ZONE\" | sed -e 's:\([0-9][0-9]*\)[a-z]*\$:\\1:'`"
 
+# Add default locale
+cat << EOF > /etc/environment
+LANG=en_US.utf-8
+LC_ALL=en_US.utf-8
+EOF
+
+# BANNER CONFIGURATION
+BANNER_FILE="/etc/ssh_banner"
+if [ $BANNER_FILE ] ;then
+    echo "[INFO] Installing banner ... "
+    echo -e "\n Banner ${BANNER_FILE}" >>/etc/ssh/sshd_config
+else
+    echo "[INFO] banner file is not accessible skipping ..."
+    exit 1;
+fi
+
 yum -y update
-yum -y install nginx php70-fpm php70-cli php70-mysqlnd php70-soap php70-xml php70-zip php70-json php70-mcrypt php70-intl php70-mbstring php70-zip php70-gd mysql56
+yum -y install nginx php70-fpm php70-cli php70-mysqlnd php70-soap php70-xml php70-zip php70-json php70-mcrypt php70-intl php70-mbstring php70-zip php70-opcache php70-gd php70-devel php7-pear gcc mysql56
+yum -y install ImageMagick ImageMagick-devel
+pecl7 install imagick
 
 chkconfig nginx on
 chkconfig php-fpm-7.0 on
@@ -111,6 +127,18 @@ events {
 }
 
 http {
+
+gzip on;
+gzip_disable "msie6";
+
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 6;
+gzip_buffers 16 8k;
+gzip_http_version 1.1;
+gzip_min_length 256;
+gzip_types *;
+
 upstream fastcgi_backend {
         server unix:/tmp/php-cgi.socket;
         server 127.0.0.1:9000 backup;
@@ -119,13 +147,15 @@ server {
         set $MAGE_ROOT /var/www/html;
         include /etc/nginx/mime.types;
         listen 80 default_server;
-        server_name www.example.com;
+        server_name precita.vn www.precita.vn;
         root $MAGE_ROOT/pub/;
 
         index index.php;
         autoindex off;
         charset UTF-8;
         error_page 404 403 = /errors/404.php;
+        gzip on;
+
         # PHP entry point for setup application
         location ~* ^/setup($|/) {
             root $MAGE_ROOT;
@@ -183,6 +213,20 @@ server {
         location /static/ {
             # Uncomment the following line in production mode
             expires max;
+            ##
+            # `gzip` Settings
+            #
+            #
+            gzip on;
+            gzip_disable "msie6";
+
+            gzip_vary on;
+            gzip_proxied any;
+            gzip_comp_level 6;
+            gzip_buffers 16 8k;
+            gzip_http_version 1.1;
+            gzip_min_length 256;
+            gzip_types *;
 
             # Remove signature of the static files that is used to overcome the browser cache
             location ~ ^/static/version {
@@ -192,6 +236,7 @@ server {
             location ~* \.(ico|jpg|jpeg|png|gif|svg|js|css|swf|eot|ttf|otf|woff|woff2)$ {
                 add_header Cache-Control "public";
                 add_header X-Frame-Options "SAMEORIGIN";
+                add_header Access-Control-Allow-Origin "*";
                 expires +1y;
 
                 if (!-f $request_filename) {
@@ -279,15 +324,36 @@ events {
 }
 
 http {
+
+gzip on;
+gzip_disable "msie6";
+
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 6;
+gzip_buffers 16 8k;
+gzip_http_version 1.1;
+gzip_min_length 256;
+gzip_types *;
+
 upstream fastcgi_backend {
         server unix:/tmp/php-cgi.socket;
         server 127.0.0.1:9000 backup;
 }
+
+server {
+        listen         80;
+        server_name    precita.vn www.precita.vn;
+        if ($http_x_forwarded_proto != "https") {
+            rewrite ^(.*)$ https://$server_name$REQUEST_URI permanent;
+        }
+}
+
 server {
         set $MAGE_ROOT /var/www/html;
         include /etc/nginx/mime.types;
         listen 443 ssl default_server;
-        server_name www.example.com;
+        server_name precita.vn www.precita.vn;
         root $MAGE_ROOT/pub/;
 
         ssl_certificate /etc/ssl/certs/magento;
@@ -297,6 +363,8 @@ server {
         autoindex off;
         charset UTF-8;
         error_page 404 403 = /errors/404.php;
+        gzip on;
+
         # PHP entry point for setup application
         location ~* ^/setup($|/) {
             root $MAGE_ROOT;
@@ -354,6 +422,20 @@ server {
         location /static/ {
             # Uncomment the following line in production mode
             expires max;
+            ##
+            # `gzip` Settings
+            #
+            #
+            gzip on;
+            gzip_disable "msie6";
+
+            gzip_vary on;
+            gzip_proxied any;
+            gzip_comp_level 6;
+            gzip_buffers 16 8k;
+            gzip_http_version 1.1;
+            gzip_min_length 256;
+            gzip_types *;
 
             # Remove signature of the static files that is used to overcome the browser cache
             location ~ ^/static/version {
@@ -363,6 +445,7 @@ server {
             location ~* \.(ico|jpg|jpeg|png|gif|svg|js|css|swf|eot|ttf|otf|woff|woff2)$ {
                 add_header Cache-Control "public";
                 add_header X-Frame-Options "SAMEORIGIN";
+                add_header Access-Control-Allow-Origin "*";
                 expires +1y;
 
                 if (!-f $request_filename) {
@@ -583,7 +666,18 @@ ldap.max_links = -1
 [dba]
 [curl]
 [openssl]
+[opcache]
+opcache.memory_consumption = 128
+opcache.interned_strings_buffer = 8
+opcache.max_accelerated_files = 4000
+opcache.revalidate_freq = 60
+opcache.fast_shutdown = 1
+opcache.enable_cli = 0
+opcache.enable = 1
 EOF
+
+# Add ImageMagick Extenstion
+echo "extension=imagick.so" > /etc/php.d/20-imagick.ini
 
 mkdir -p /var/www/html
 chown ec2-user:nginx /var/www/html
@@ -604,7 +698,6 @@ fi
 sudo -u ec2-user /tmp/configure_magento.sh $dbhost $dbuser $dbpassword $dbname $cname $adminfirst $adminlast $adminemail $adminuser $adminpassword $cachehost $magentourl $protocol $magentolanguage $magentocurrency $magentotimezone
 
 tar czf /root/media.tgz -C /var/www/html/pub/media .
-mount -t nfs4 -o vers=4.1 $efsid.efs.$EC2_REGION.amazonaws.com:/ /var/www/html/pub/media
 rm -rf /var/www/html/pub/media/*
 tar xzf /root/media.tgz -C /var/www/html/pub/media
 

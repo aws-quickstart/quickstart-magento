@@ -34,6 +34,42 @@ cd
 #fi
 [ -f "magento.tar.gz" ] && echo "Media file Found" || echo "Media file Not found"
 
+# Install PHP Composer
+sudo chown -R ec2-user:ec2-user /home/ec2-user/.composer
+sudo curl -s https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+# Configure deployer credential for git
+git config --global credential.helper '!aws codecommit credential-helper $@'
+git config --global credential.UseHttpPath true
+# Clone precita project
+git clone https://git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/precita
+cd precita/
+git checkout demo
+git pull
+
+# Codedeploy for single server script
+cat << EOF > ~/codedeploy
+#!/bin/bash
+# Simple Script for Magento Single Server Deployment #
+cd /var/www/html/
+git checkout app/etc/config.php
+git pull
+/var/www/html/bin/magento maintenance:enable
+if [ "pmrhol7wi3cvml.c6hhjgksnklt.ap-southeast-1.rds.amazonaws.com" = "update" ]
+then
+  echo "Deploying with composer update"
+  composer update
+fi
+/var/www/html/bin/magento maintenance:enable
+/var/www/html/bin/magento setup:upgrade
+/var/www/html/bin/magento setup:di:compile
+/var/www/html/bin/magento setup:static-content:deploy vi_VN en_US
+/var/www/html/bin/magento cache:enable
+/var/www/html/bin/magento maintenance:disable
+EOF
+chmod +x ~/codedeploy
+sudo mv ~/codedeploy /usr/local/bin/codedeploy
+
 cd /var/www/html
 tar xzf ~/magento.tar.gz
 

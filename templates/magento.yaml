@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy Magento 2.1 on AWS (New VPC)
+Description: Deploy Magento 2.2 on AWS. QS(0013)
 Metadata:
   LICENSE: Apache License Version 2.0
   AWS::CloudFormation::Interface:
@@ -8,20 +8,17 @@ Metadata:
     - Label:
         default: Network Configuration
       Parameters:
-      - AvailabilityZones
+      - VPCID
       - VPCCIDR
-      - PrivateSubnet1CIDR
-      - PrivateSubnet2CIDR
-      - PublicSubnet1CIDR
-      - PublicSubnet2CIDR
-      - RemoteAccessCIDR
+      - PrivateSubnet1ID
+      - PrivateSubnet2ID
+      - PublicSubnet1ID
+      - PublicSubnet2ID
       - AccessCIDR
     - Label:
         default: Amazon EC2 Configuration
       Parameters:
       - KeyPairName
-      - BastionAMIOS
-      - BastionInstanceType
       - WebServerInstanceType
       - WebServerMinSize
       - WebServerMaxSize
@@ -66,6 +63,11 @@ Metadata:
       Parameters:
       - QSS3BucketName
       - QSS3KeyPrefix
+    - Label:
+        default: Deployment Configuration
+      Parameters:
+      - DeployerAccessKey
+      - DeployerSecretKey
     ParameterLabels:
       AccessCIDR:
         default: Permitted IP range
@@ -79,20 +81,14 @@ Metadata:
         default: Administrator password
       AdminUserName:
         default: Administrator user name
-      AvailabilityZones:
-        default: Availability Zones
-      BastionAMIOS:
-        default: Bastion AMI OS
-      BastionInstanceType:
-        default: Bastion instance type
+      DBEngineType:
+        default: DB engine
       DBAllocatedStorage:
         default: DB storage size (in GiB)
       DBAutoMinorVersionUpgrade:
         default: Automatic upgrade to new Amazon Aurora/MySQL minor versions
       DBBackupRetentionPeriod:
         default: DB backup retention period
-      DBEngineType:
-        default: DB engine
       DBInstanceClass:
         default: Amazon Aurora/MySQL DB instance type
       DBIops:
@@ -121,30 +117,34 @@ Metadata:
         default: Magento currency
       MagentoLanguage:
         default: Magento language
-      MagentoReleaseMedia:
-        default: S3 file path to download Magento
       MagentoTimezone:
         default: Magento timezone
+      MagentoReleaseMedia:
+        default: S3 file path to download Magento
       NotificationEmail:
         default: Email address to notify
-      PrivateSubnet1CIDR:
-        default: Private subnet 1 CIDR
-      PrivateSubnet2CIDR:
-        default: Private subnet 2 CIDR
-      PublicSubnet1CIDR:
-        default: Public subnet 1 CIDR
-      PublicSubnet2CIDR:
-        default: Public subnet 2 CIDR
+      PrivateSubnet1ID:
+        default: Private subnet 1 ID
+      PrivateSubnet2ID:
+        default: Private subnet 2 ID
+      PublicSubnet1ID:
+        default: Public subnet 1 ID
+      PublicSubnet2ID:
+        default: Public subnet 2 ID
       QSS3BucketName:
         default: AWS Quick Start S3 bucket name
       QSS3KeyPrefix:
         default: AWS Quick Start S3 key prefix
-      RemoteAccessCIDR:
-        default: Allowed bastion external access CIDR
+      DeployerAccessKey:
+        default: Access key of deployer
+      DeployerSecretKey:
+        default: Secret key of deployer
       SSLCertificateId:
         default: SSL certificate ARN
       VPCCIDR:
         default: VPC CIDR
+      VPCID:
+        default: VPC ID
       WebServerDesiredCapacity:
         default: Desired number of web server instances
       WebServerInstanceType:
@@ -181,36 +181,6 @@ Parameters:
   AdminUserName:
     Description: Username of the Magento site administrator
     Type: String
-  AvailabilityZones:
-    Description: 'List of Availability Zones to use for the subnets in the VPC. Note:
-      The logical order is preserved (2 AZs are used for this deployment)'
-    Type: List<AWS::EC2::AvailabilityZone::Name>
-  BastionAMIOS:
-    AllowedValues:
-    - Amazon-Linux-HVM
-    - CentOS-7-HVM
-    - Ubuntu-Server-14.04-LTS-HVM
-    - Ubuntu-Server-16.04-LTS-HVM
-    Default: Amazon-Linux-HVM
-    Description: The Linux distribution for the AMI to be used for the bastion instances
-    Type: String
-  BastionInstanceType:
-    AllowedValues:
-    - t2.nano
-    - t2.micro
-    - t2.small
-    - t2.medium
-    - t2.large
-    - m3.large
-    - m3.xlarge
-    - m3.2xlarge
-    - m4.large
-    - m4.xlarge
-    - m4.2xlarge
-    - m4.4xlarge
-    Default: t2.micro
-    Description: Amazon EC2 instance type for the bastion instances
-    Type: String
   DBAllocatedStorage:
     ConstraintDescription: Must be between 5 and 4096 GiB. If Iops specified, AllocatedStorage
       must be at least 100 GiB and with minimum Iops value of 1000
@@ -235,7 +205,7 @@ Parameters:
     - Amazon Aurora
     - MySQL
     Default: Amazon Aurora
-    Description: Database engine to use for Magento database
+    Description: Engine to use for Magento database
     Type: String
   DBInstanceClass:
     AllowedValues:
@@ -403,38 +373,24 @@ Parameters:
     ConstraintDescription: Must be a valid email address.
     Description: Email address to notify if there are any scaling operations
     Type: String
-  PrivateSubnet1CIDR:
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-    ConstraintDescription: Must be a valid IP range in x.x.x.x/x notation
-    Default: 10.0.0.0/19
-    Description: CIDR block for private subnet 1 located in Availability Zone 1.
-    Type: String
-  PrivateSubnet2CIDR:
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-    ConstraintDescription: Must be a valid IP range in x.x.x.x/x notation
-    Default: 10.0.32.0/19
-    Description: CIDR block for private subnet 2 located in Availability Zone 2.
-    Type: String
-  PublicSubnet1CIDR:
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-    ConstraintDescription: Must be a valid IP range in x.x.x.x/x notation
-    Default: 10.0.128.0/20
-    Description: CIDR Block for the public DMZ subnet 1 located in Availability Zone
-      1
-    Type: String
-  PublicSubnet2CIDR:
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-    ConstraintDescription: Must be a valid IP range in x.x.x.x/x notation
-    Default: 10.0.144.0/20
-    Description: CIDR Block for the public DMZ subnet 2 located in Availability Zone
-      2
-    Type: String
+  PrivateSubnet1ID:
+    Description: Private Subnet Id 1
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnet2ID:
+    Description: Private Subnet Id 2
+    Type: AWS::EC2::Subnet::Id
+  PublicSubnet1ID:
+    Description: Public Subnet Id 1
+    Type: AWS::EC2::Subnet::Id
+  PublicSubnet2ID:
+    Description: Public Subnet Id 2
+    Type: AWS::EC2::Subnet::Id
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
-    Default: quickstart-reference
+    Default: precita-sources
     Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
@@ -443,15 +399,16 @@ Parameters:
     AllowedPattern: ^[0-9a-zA-Z-/]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
-    Default: magento/latest/
+    Default: cloudformation/magento/stage/
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
     Type: String
-  RemoteAccessCIDR:
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
-    Description: Allowed CIDR block for external SSH access to the bastions
+  DeployerAccessKey:
+    Description: Access key of deployer
+    Type: String
+  DeployerSecretKey:
+    Description: Secret key of deployer
     Type: String
   SSLCertificateId:
     Default: ''
@@ -461,9 +418,11 @@ Parameters:
   VPCCIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     ConstraintDescription: Must be a valid IP range in x.x.x.x/x notation
-    Default: 10.0.0.0/16
-    Description: CIDR Block for the VPC
+    Description: The CIDR IP range of VPC
     Type: String
+  VPCID:
+    Description: VPC Id
+    Type: AWS::EC2::VPC::Id
   WebServerDesiredCapacity:
     Default: '1'
     Description: Desired No of web server instances
@@ -552,105 +511,96 @@ Rules:
             - sa-east-1
           - !Ref AWS::Region
       AssertDescription: Amazon Aurora is not currently supported in this region
-  EFSSupportedRegionsRule:
-    Assertions:
-    - Assert:
-        !Not
-        - !Contains
-          - - ap-northeast-1
-            - ap-northeast-2
-            - ap-south-1
-            - ap-southeast-1
-            - ca-central-1
-            - eu-west-2
-            - sa-east-1
-            - us-west-1
-          - !Ref AWS::Region
-      AssertDescription: Amazon EFS is not currently supported in this region
 Resources:
-  VPCStack:
+  SecurityGroupStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}submodules/quickstart-aws-vpc/templates/aws-vpc.template
-      Parameters:
-        AvailabilityZones:
-          !Join
-          - ','
-          - !Ref AvailabilityZones
-        KeyPairName: !Ref KeyPairName
-        NumberOfAZs: '2'
-        PrivateSubnet1ACIDR: !Ref PrivateSubnet1CIDR
-        PrivateSubnet2ACIDR: !Ref PrivateSubnet2CIDR
-        PublicSubnet1CIDR: !Ref PublicSubnet1CIDR
-        PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
-        VPCCIDR: !Ref VPCCIDR
-  BastionStack:
-    DependsOn: VPCStack
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}submodules/quickstart-linux-bastion/templates/linux-bastion.template
-      Parameters:
-        BastionAMIOS: !Ref BastionAMIOS
-        BastionInstanceType: !Ref BastionInstanceType
-        KeyPairName: !Ref KeyPairName
-        PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-        PublicSubnet2ID: !GetAtt VPCStack.Outputs.PublicSubnet2ID
-        RemoteAccessCIDR: !Ref RemoteAccessCIDR
-        VPCID: !GetAtt VPCStack.Outputs.VPCID
-  MagentoStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/magento.template
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/securitygroups.yaml
       Parameters:
         AccessCIDR: !Ref AccessCIDR
-        AdminEmail: !Ref AdminEmail
-        AdminFirstName: !Ref AdminFirstName
-        AdminLastName: !Ref AdminLastName
-        AdminPassword: !Ref AdminPassword
-        AdminUserName: !Ref AdminUserName
-        DBEngineType: !Ref DBEngineType
+        VPC: !Ref VPCID
+        VPCCIDR: !Ref VPCCIDR
+  RDSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL:
+        !Sub
+        - https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/${RDSScriptName}
+        - RDSScriptName:
+            !If
+            - UseAurora
+            - rdsaurora.yaml
+            - rdsmysql.yaml
+      Parameters:
+        VPC: !Ref VPCID
+        RDSSecurityGroup: !GetAtt SecurityGroupStack.Outputs.MySQLRDSSecurityGroup
+        Subnets: !Sub ${PrivateSubnet1ID},${PrivateSubnet2ID}
         DBAllocatedStorage: !Ref DBAllocatedStorage
         DBAutoMinorVersionUpgrade: !Ref DBAutoMinorVersionUpgrade
         DBBackupRetentionPeriod: !Ref DBBackupRetentionPeriod
         DBInstanceClass: !Ref DBInstanceClass
-        DBIops: !Ref DBIops
-        DBMasterUserPassword: !Ref DBMasterUserPassword
-        DBMasterUsername: !Ref DBMasterUsername
-        DBMultiAZ: !Ref DBMultiAZ
         DBName: !Ref DBName
+        DBIops: !Ref DBIops
+        DBMasterUsername: !Ref DBMasterUsername
+        DBMasterUserPassword: !Ref DBMasterUserPassword
+        DBMultiAZ: !Ref DBMultiAZ
         DBStorageType: !Ref DBStorageType
-        DNSName: !Ref DNSName
+  ElastiCache:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/elasticache.yaml
+      Parameters:
+        VPC: !Ref VPCID
+        ElastiCacheSecurityGroup: !GetAtt SecurityGroupStack.Outputs.ElastiCacheSecurityGroup
+        Subnets: !Sub ${PrivateSubnet1ID},${PrivateSubnet2ID}
+        ElastiCacheNodes: !Ref ElastiCacheNodes
         ElastiCacheAutomaticFailover: !Ref ElastiCacheAutomaticFailover
         ElastiCacheNodeType: !Ref ElastiCacheNodeType
-        ElastiCacheNodes: !Ref ElastiCacheNodes
-        KeyPairName: !Ref KeyPairName
+  WebServerASGStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/webserver.yaml
+      Parameters:
+        KeyPair: !Ref KeyPairName
+        ELBSecurityGroup: !GetAtt SecurityGroupStack.Outputs.ELBSecurityGroup
+        WebServerSecurityGroup: !GetAtt SecurityGroupStack.Outputs.WebServerSecurityGroup
+        NotificationEmail: !Ref NotificationEmail
+        WebServerMinSize: !Ref WebServerMinSize
+        WebServerMaxSize: !Ref WebServerMaxSize
+        WebServerInstanceType: !Ref WebServerInstanceType
+        WebServerDesiredCapacity: !Ref WebServerDesiredCapacity
+        WebServerSubnets: !Sub ${PrivateSubnet1ID},${PrivateSubnet2ID}
+        ElasticLoadBalancerSubnets: !Sub ${PublicSubnet1ID},${PublicSubnet2ID}
+        VPCID: !Ref VPCID
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        DeployerAccessKey: !Ref DeployerAccessKey
+        DeployerSecretKey: !Ref DeployerSecretKey
         MagentoCurrency: !Ref MagentoCurrency
         MagentoLanguage: !Ref MagentoLanguage
         MagentoTimezone: !Ref MagentoTimezone
         MagentoReleaseMedia: !Ref MagentoReleaseMedia
-        NotificationEmail: !Ref NotificationEmail
-        PrivateSubnet1ID: !GetAtt VPCStack.Outputs.PrivateSubnet1AID
-        PrivateSubnet2ID: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
-        PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-        PublicSubnet2ID: !GetAtt VPCStack.Outputs.PublicSubnet2ID
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        DBMasterUserPassword: !Ref DBMasterUserPassword
+        DBMasterUsername: !Ref DBMasterUsername
+        DBName: !Ref DBName
+        MySQLEndPointAddress: !GetAtt RDSStack.Outputs.RDSEndPointAddress
+        ElastiCacheEndpoint: !GetAtt ElastiCache.Outputs.ElastiCacheEndpoint
+        DNSName: !Ref DNSName
+        AdminFirstName: !Ref AdminFirstName
+        AdminLastName: !Ref AdminLastName
+        AdminEmail: !Ref AdminEmail
+        AdminUserName: !Ref AdminUserName
+        AdminPassword: !Ref AdminPassword
         SSLCertificateId: !Ref SSLCertificateId
-        VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
-        VPCID: !GetAtt VPCStack.Outputs.VPCID
-        WebServerDesiredCapacity: !Ref WebServerDesiredCapacity
-        WebServerInstanceType: !Ref WebServerInstanceType
-        WebServerMaxSize: !Ref WebServerMaxSize
-        WebServerMinSize: !Ref WebServerMinSize
 Outputs:
   URL:
     Description: The URL of the website
-    Value: !GetAtt MagentoStack.Outputs.URL
+    Value: !GetAtt WebServerASGStack.Outputs.URL
   AdminURL:
     Description: Admin path
-    Value: !GetAtt MagentoStack.Outputs.AdminURL
+    Value: !GetAtt WebServerASGStack.Outputs.AdminURL
   ELBURL:
     Description: The URL of the ELB, you should create a CNAME or alias to this name
       if you specified a DNS name
-    Value: !GetAtt MagentoStack.Outputs.ELBURL
+    Value: !GetAtt WebServerASGStack.Outputs.ELBURL
 ...

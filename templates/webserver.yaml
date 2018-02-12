@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Magento 2.1 Web Server Template
+Description: Magento 2.2 Web Server Template
 Parameters:
   AdminEmail:
     Description: Email of the Magento site administrator
@@ -40,9 +40,6 @@ Parameters:
     Description: DNS Name for the magento site, you should create an alias for the
       ELB after the stack creation
     Type: String
-  EFSSecurityGroup:
-    Description: EFS Security Group
-    Type: AWS::EC2::SecurityGroup::Id
   ELBSecurityGroup:
     Description: ELB Security Group
     Type: AWS::EC2::SecurityGroup::Id
@@ -91,7 +88,7 @@ Parameters:
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
-    Default: quickstart-reference
+    Default: sources
     Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
@@ -100,10 +97,16 @@ Parameters:
     AllowedPattern: ^[0-9a-zA-Z-/]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
-    Default: magento/latest/
+    Default: cloudformation/magento/demo/
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
+    Type: String
+  DeployerAccessKey:
+    Description: Access key of deployer
+    Type: String
+  DeployerSecretKey:
+    Description: Secret key of deployer
     Type: String
   SSLCertificateId:
     Default: ''
@@ -214,34 +217,6 @@ Conditions:
     - !Ref DNSName
     - ''
 Resources:
-  FileSystem:
-    Type: AWS::EFS::FileSystem
-    Properties:
-      PerformanceMode: generalPurpose
-      Encrypted: true
-      FileSystemTags:
-      - Key: Name
-        Value: EFS AWS Quick Start
-  MountTarget1:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref FileSystem
-      SubnetId:
-        !Select
-        - '0'
-        - !Ref WebServerSubnets
-      SecurityGroups:
-      - !Ref EFSSecurityGroup
-  MountTarget2:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref FileSystem
-      SubnetId:
-        !Select
-        - '1'
-        - !Ref WebServerSubnets
-      SecurityGroups:
-      - !Ref EFSSecurityGroup
   MagentoMainLogGroup:
     Type: AWS::Logs::LogGroup
   NewIamInstanceRole:
@@ -255,6 +230,8 @@ Resources:
             - ec2.amazonaws.com
           Action:
           - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
       Path: /
       Policies:
       - PolicyDocument:
@@ -287,9 +264,6 @@ Resources:
       Timeout: '3600'
   MagentoAMI:
     Type: AWS::EC2::Instance
-    DependsOn:
-    - MountTarget1
-    - MountTarget2
     Metadata:
       Comment: Install a Magento web server
       AWS::CloudFormation::Authentication:
@@ -302,6 +276,7 @@ Resources:
             yum:
               nfs-utils: []
               awslogs: []
+              git: []
           files:
             /etc/awslogs/awslogs.conf:
               content: !Sub |
@@ -338,6 +313,12 @@ Resources:
                 path=Resources.LaunchConfig.Metadata.AWS::CloudFormation::Init
                 action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfig --region ${AWS::Region}
                 runas=root
+            /etc/ssh_banner:
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/banner_message.txt
+              mode: '000644'
+              owner: root
+              group: root
+              authentication: S3AccessCreds
             /install_magento.sh:
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/install_magento.sh
               mode: '000644'
@@ -356,6 +337,34 @@ Resources:
               owner: root
               group: root
               authentication: S3AccessCreds
+            /home/ec2-user/.aws/credentials:
+              content: !Sub |
+                [default]
+                aws_access_key_id=${DeployerAccessKey}
+                aws_secret_access_key=${DeployerSecretKey}
+              mode: '000600'
+              owner: ec2-user
+              group: ec2-user
+            /home/ec2-user/.aws/config:
+              content: !Sub |
+                [default]
+                region=${AWS::Region}
+              mode: '000600'
+              owner: ec2-user
+              group: ec2-user
+            /home/ec2-user/.composer/auth.json:
+              content: !Sub |
+                {
+                  "http-basic": {
+                    "repo.magento.com": {
+                      "username": "1eb5caa8fbe588d329f7d813e11de90f",
+                      "password": "f8c1a6d64e0047951081861083d265a8"
+                    }
+                  }
+                }
+              mode: '000600'
+              owner: ec2-user
+              group: ec2-user
             /tmp/params.txt:
               content:
                 !Sub
@@ -371,7 +380,6 @@ Resources:
                   AdminUserName|${AdminUserName}
                   AdminPassword|${AdminPassword}
                   ElastiCacheEndpoint|${ElastiCacheEndpoint}
-                  FileSystem|${FileSystem}
                   MagentoReleaseMedia|${MagentoReleaseMedia}
                   SSLCertificateId|${SSLCertificateId}
                   MagentoLanguage|${MagentoLanguage}
@@ -426,9 +434,9 @@ Resources:
             /opt/aws/bin/cfn-signal -e $? -d "`cat /home/ec2-user/adminuri`" -r "Build Process Complete" '${MagentoAMIWaitHandle}'
       Tags:
       - Key: Application
-        Value: AWS Quick Start (Magento)
+        Value: Precita Stage (Magento)
       - Key: Name
-        Value: MagentoAMI (AWS Quick Start)
+        Value: PrecitaAMI (Stage)
   AMIInfoFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -539,7 +547,8 @@ Resources:
       MaxSize: !Ref WebServerMaxSize
       DesiredCapacity: !Ref WebServerDesiredCapacity
       TargetGroupARNs:
-      - !Ref ALBTargetGroup
+      - !Ref ALBTargetGroupHTTP
+      - !Ref ALBTargetGroupHTTPS
       VPCZoneIdentifier: !Ref WebServerSubnets
       NotificationConfiguration:
         TopicARN: !Ref NotificationTopic
@@ -567,8 +576,7 @@ Resources:
           Fn::Sub: |
             #cloud-config
             runcmd:
-            - echo "${FileSystem}.efs.${AWS::Region}.amazonaws.com:/    /var/www/html/pub/media   nfs4    defaults" >> /etc/fstab
-            - mount -a
+            - /var/www/html/bin/magento setup:static-content:deploy -f
   WebServerTargetTrackingScalingPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
@@ -590,33 +598,17 @@ Resources:
       Tags:
       - Key: Name
         Value: MagentoWebserverALB
-  ALBTargetGroup:
+  ALBTargetGroupHTTP:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 30
       HealthCheckPath: /health
-      HealthCheckPort:
-        !If
-        - UseSSL
-        - 443
-        - 80
-      HealthCheckProtocol:
-        !If
-        - UseSSL
-        - HTTPS
-        - HTTP
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Port:
-        !If
-        - UseSSL
-        - 443
-        - 80
-      Protocol:
-        !If
-        - UseSSL
-        - HTTPS
-        - HTTP
+      Port: 80
+      Protocol: HTTP
       UnhealthyThresholdCount: 5
       VpcId:
         Ref: VPCID
@@ -627,7 +619,37 @@ Resources:
         Value: lb_cookie
       - Key: stickiness.lb_cookie.duration_seconds
         Value: '30'
-  ALBListener:
+  ALBTargetGroupHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /health
+      HealthCheckPort: 443
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Port: 443
+      Protocol: HTTPS
+      UnhealthyThresholdCount: 5
+      VpcId:
+        Ref: VPCID
+      TargetGroupAttributes:
+      - Key: stickiness.enabled
+        Value: 'true'
+      - Key: stickiness.type
+        Value: lb_cookie
+      - Key: stickiness.lb_cookie.duration_seconds
+        Value: '30'
+  ALBListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref ALBTargetGroupHTTP
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+  ALBListenerHTTPS:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       Certificates:
@@ -637,18 +659,10 @@ Resources:
         - !Ref AWS::NoValue
       DefaultActions:
       - Type: forward
-        TargetGroupArn: !Ref ALBTargetGroup
+        TargetGroupArn: !Ref ALBTargetGroupHTTPS
       LoadBalancerArn: !Ref ApplicationLoadBalancer
-      Port:
-        !If
-        - UseSSL
-        - 443
-        - 80
-      Protocol:
-        !If
-        - UseSSL
-        - HTTPS
-        - HTTP
+      Port: 443
+      Protocol: HTTPS
 Outputs:
   URL:
     Description: The URL of the website

@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Git Repositories for E-commerce
+Resources:
+  CodeCommitSNSTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: CodeCommitTopic
+      TopicName: CodeCommitTopic
+  InfrastructureRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: precita-infras
+      RepositoryDescription: The CloudFormation Infrastructure for Precita
+  PrecitaRepository:
+    Type: "AWS::CodeCommit::Repository"
+    Properties:
+      RepositoryName: precita
+      RepositoryDescription: The First Jewelry E-commerce Project in Vietnam
+      Triggers:
+      - Name: DemoTrigger
+        CustomData: Project Precita Demo
+        DestinationArn:
+          Ref: CodeCommitSNSTopic
+        Branches:
+        - Demo
+        Events:
+        - all
+  DeploymentRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: precita-deploy
+      RepositoryDescription: The CloudFormation Deployment for Precita
+Outputs:
+  PrecitaRepositoryName:
+    Description: The Name of Precita Repository
+    Value: !GetAtt PrecitaRepository.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-PrecitaRepositoryName"
+  PrecitaRepositoryARN:
+    Description: The ARN of Precita Repository
+    Value: !GetAtt PrecitaRepository.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-PrecitaRepositoryARN"
+  PrecitaRepositoryCloneUrlHttp:
+    Description: The HTTP Clone URL of Precita Repository
+    Value: !GetAtt PrecitaRepository.CloneUrlHttp
+    Export:
+      Name: !Sub "${AWS::StackName}-PrecitaRepositoryCloneUrlHttp"
+  PrecitaRepositoryCloneUrlSsh:
+    Description: The SSH Clone URL of Precita Repository
+    Value: !GetAtt PrecitaRepository.CloneUrlSsh
+    Export:
+      Name: !Sub "${AWS::StackName}-PrecitaRepositoryCloneUrlSsh"
+  InfrastructureRepositoryName:
+    Description: The Name of Precita Infrastructure Repository
+    Value: !GetAtt InfrastructureRepository.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-InfrastructureRepositoryName"
+  InfrastructureRepositoryARN:
+    Description: The ARN of Precita InfrastructureRepository Repository
+    Value: !GetAtt InfrastructureRepository.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-InfrastructureRepositoryARN"
+  InfrastructureRepositoryCloneUrlHttp:
+    Description: The HTTP Clone URL of Precita Infrastructure Repository
+    Value: !GetAtt InfrastructureRepository.CloneUrlHttp
+    Export:
+      Name: !Sub "${AWS::StackName}-InfrastructureRepositoryCloneUrlHttp"
+  InfrastructureRepositoryCloneUrlSsh:
+    Description: The SSH Clone URL of Precita Infrastructure Repository
+    Value: !GetAtt InfrastructureRepository.CloneUrlSsh
+    Export:
+      Name: !Sub "${AWS::StackName}-InfrastructureRepositoryCloneUrlSsh"
+  DeploymentRepositoryName:
+    Description: The Name of Deployment Repository
+    Value: !GetAtt DeploymentRepository.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-DeploymentRepositoryName"
+  DeploymentRepositoryARN:
+    Description: The ARN of Deployment Repository
+    Value: !GetAtt DeploymentRepository.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-DeploymentRepositoryARN"
+  DeploymentRepositoryCloneUrlHttp:
+    Description: The HTTP Clone URL of Deployment Repository
+    Value: !GetAtt DeploymentRepository.CloneUrlHttp
+    Export:
+      Name: !Sub "${AWS::StackName}-DeploymentRepositoryCloneUrlHttp"
+  DeploymentRepositoryCloneUrlSsh:
+    Description: The SSH Clone URL of Deployment Repository
+    Value: !GetAtt DeploymentRepository.CloneUrlSsh
+    Export:
+      Name: !Sub "${AWS::StackName}-DeploymentRepositoryCloneUrlSsh"

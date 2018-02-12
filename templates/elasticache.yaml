@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Magento 2.1 Elasticache Template
+Description: Magento 2.2 Elasticache Template
 Parameters:
   ElastiCacheAutomaticFailover:
     AllowedValues:

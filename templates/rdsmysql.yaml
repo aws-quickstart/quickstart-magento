@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Magento 2.1 Amazon Aurora Template
+Description: Magento 2.2 RDS MySQL Template
 Parameters:
   DBAllocatedStorage:
     ConstraintDescription: must be between 5 and 4096 GiB. If Iops specified, AllocatedStorage
@@ -29,6 +29,8 @@ Parameters:
     - db.m3.large
     - db.m3.xlarge
     - db.m3.2xlarge
+    - db.m4.large
+    - db.m4.xlarge
     - db.m4.2xlarge
     - db.r3.large
     - db.r3.xlarge
@@ -46,7 +48,7 @@ Parameters:
     - db.m1.large
     - db.m1.xlarge
     ConstraintDescription: Must select a valid database instance type.
-    Default: db.r3.2xlarge
+    Default: db.m4.large
     Description: The name of the compute and memory capacity class of the DB instance.
     Type: String
   DBIops:
@@ -94,8 +96,8 @@ Parameters:
     Type: String
   DBName:
     AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
-    Default: QuickstartAuroraDB
-    Description: Name of Amazon Aurora DB for Magento Stack
+    Default: QuickstartMySQLDB
+    Description: Name of MySQL DB for Magento Stack
     MaxLength: '64'
     MinLength: '5'
     Type: String
@@ -108,7 +110,7 @@ Parameters:
     Description: The storage type associated with this database instance
     Type: String
   RDSSecurityGroup:
-    Description: Amazon Aurora Security Group
+    Description: MySql Security Group
     Type: AWS::EC2::SecurityGroup::Id
   Subnets:
     ConstraintDescription: must be list of existing subnet Ids
@@ -119,45 +121,36 @@ Parameters:
     AllowedPattern: vpc-[0-9a-z]{8}
     Default: vpc-xxxxxxxx
     Description: VPC-ID of your existing Virtual Private Cloud (VPC) where you want
-      to deploy Amazon Aurora.
+      to depoy RDS.
     Type: AWS::EC2::VPC::Id
 Conditions:
   IOPSStorageType:
     !Equals
     - !Ref DBStorageType
     - io1
-  IsDBMultiAZ:
-    !Equals
-    - !Ref DBMultiAZ
-    - 'true'
 Resources:
-  AuroraDBSubnetGroup:
+  MySQLDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: Subnets available for the Amazon Aurora DB Instance
+      DBSubnetGroupDescription: Subnets available for the RDS MySQL DB Instance
       SubnetIds: !Ref Subnets
-  AuroraDBCluster:
-    Type: AWS::RDS::DBCluster
+  MySQLDB:
+    Type: AWS::RDS::DBInstance
     Properties:
-      DatabaseName: !Ref DBName
-      Engine: aurora
+      DBName: !Ref DBName
+      AllocatedStorage: !Ref DBAllocatedStorage
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: MySQL
       EngineVersion: '5.6'
       MasterUsername: !Ref DBMasterUsername
       MasterUserPassword: !Ref DBMasterUserPassword
-      BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-      DBSubnetGroupName: !Ref AuroraDBSubnetGroup
-      VpcSecurityGroupIds:
+      DBSubnetGroupName: !Ref MySQLDBSubnetGroup
+      VPCSecurityGroups:
       - !Ref RDSSecurityGroup
-      Tags:
-      - Key: Name
-        Value: !Sub AuroraDB-${AWS::StackName}
-  AuroraDB1:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      Engine: aurora
-      DBClusterIdentifier: !Ref AuroraDBCluster
-      DBInstanceClass: !Ref DBInstanceClass
+      MultiAZ: !Ref DBMultiAZ
+      StorageType: !Ref DBStorageType
       AutoMinorVersionUpgrade: !Ref DBAutoMinorVersionUpgrade
+      BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       Iops:
         !If
         - IOPSStorageType
@@ -165,34 +158,18 @@ Resources:
         - !Ref AWS::NoValue
       Tags:
       - Key: Name
-        Value: !Sub AuroraDB-${AWS::StackName}
-  AuroraDB2:
-    Type: AWS::RDS::DBInstance
-    Condition: IsDBMultiAZ
-    Properties:
-      Engine: aurora
-      DBClusterIdentifier: !Ref AuroraDBCluster
-      DBInstanceClass: !Ref DBInstanceClass
-      AutoMinorVersionUpgrade: !Ref DBAutoMinorVersionUpgrade
-      Iops:
-        !If
-        - IOPSStorageType
-        - !Ref DBIops
-        - !Ref AWS::NoValue
-      Tags:
-      - Key: Name
-        Value: !Sub AuroraDB-${AWS::StackName}
+        Value: !Sub MySQLDB-${AWS::StackName}
 Outputs:
   RDSEndPoints:
-    Description: Amazon Aurora Endpoint to connect
-    Value: !Sub ${AuroraDBCluster.Endpoint.Address}:${AuroraDBCluster.Endpoint.Port}/${DBName}
+    Description: MySQL Endpoint to connect
+    Value: !Sub ${MySQLDB.Endpoint.Address}:${MySQLDB.Endpoint.Port}/${DBName}
   DBName:
-    Description: Amazon Aurora DBName
+    Description: MySQL DBName
     Value: !Ref DBName
   RDSEndPointAddress:
-    Description: Amazon Aurora Endpoint to connect
-    Value: !Sub ${AuroraDBCluster.Endpoint.Address}
+    Description: MySQL Endpoint to connect
+    Value: !Sub ${MySQLDB.Endpoint.Address}
   RDSEndPointPort:
-    Description: Amazon Aurora Endpoint to connect
-    Value: !Sub ${AuroraDBCluster.Endpoint.Port}
+    Description: MySQL Endpoint to connect
+    Value: !Sub ${MySQLDB.Endpoint.Port}
 ...
