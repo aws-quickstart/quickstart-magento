@@ -5,7 +5,6 @@ if [ $# -ne 16 ]; then
     exit 1
 fi
 
-# cname = public name of the service (magento.javieros.tk)
 
 dbhost=$1
 dbuser=$2

@@ -310,13 +310,13 @@ Resources:
                 runas=root
             /install_magento.sh:
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/install_magento.sh
-              mode: '000644'
+              mode: '000544'
               owner: root
               group: root
               authentication: S3AccessCreds
-            /configure_magento.sh:
+            /tmp/configure_magento.sh:
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/configure_magento.sh
-              mode: '000644'
+              mode: '000555'
               owner: root
               group: root
               authentication: S3AccessCreds
@@ -387,7 +387,6 @@ Resources:
           Fn::Sub: |
             #!/bin/bash
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MagentoAMI  --region ${AWS::Region}
-            chmod a+x install_magento.sh
             ./install_magento.sh /tmp/params.txt
             /opt/aws/bin/cfn-signal -e $? -d "`cat /home/ec2-user/adminuri`" -r "Build Process Complete" '${MagentoAMIWaitHandle}'
       Tags:
