@@ -47,15 +47,7 @@ Metadata:
         default: Magento Configuration
       Parameters:
       - DNSName
-      - AdminFirstName
-      - AdminLastName
-      - AdminEmail
-      - AdminUserName
-      - AdminPassword
-      - NotificationEmail
-      - MagentoCurrency
-      - MagentoLanguage
-      - MagentoTimezone
+       - NotificationEmail
       - MagentoReleaseMedia
       - SSLCertificateId
     - Label:
