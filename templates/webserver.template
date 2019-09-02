@@ -1,6 +1,6 @@
 ---
-AWSTemplateFormatVersion: '2010-09-09'
-Description: Magento 2.1 Web Server Template
+AWSTemplateFormatVersion: '2019-04-11'
+Description: Magento 2.3 Web Server Template
 Parameters:
   AdminEmail:
     Description: Email of the Magento site administrator

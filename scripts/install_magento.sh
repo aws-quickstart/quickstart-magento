@@ -64,17 +64,17 @@ EC2_AVAIL_ZONE=`curl -s http://169.254.169.254/latest/meta-data/placement/availa
 EC2_REGION="`echo \"$EC2_AVAIL_ZONE\" | sed -e 's:\([0-9][0-9]*\)[a-z]*\$:\\1:'`"
 
 yum -y update
-yum -y install nginx php70-fpm php70-cli php70-mysqlnd php70-soap php70-xml php70-zip php70-json php70-mcrypt php70-intl php70-mbstring php70-zip php70-gd mysql56
+yum -y install nginx php72-fpm php72-cli php72-mysqlnd php72-soap php72-xml php72-zip php72-json php72-mcrypt php72-intl php72-mbstring php72-zip php72-gd mysql57
 
 chkconfig nginx on
-chkconfig php-fpm-7.0 on
+chkconfig php-fpm-7.2 on
 /etc/ssl/certs/make-dummy-cert /etc/ssl/certs/magento
 
 
-cat << EOF > /etc/php-fpm-7.0.conf
+cat << EOF > /etc/php-fpm-7.2.conf
 [global]
-pid = /var/run/php-fpm/php-fpm-7.0.pid
-error_log = /var/log/php-fpm/7.0/error.log
+pid = /var/run/php-fpm/php-fpm-7.2.pid
+error_log = /var/log/php-fpm/7.2/error.log
 daemonize = yes
 [www]
 user = nginx
@@ -88,14 +88,14 @@ pm.start_servers = 5
 pm.min_spare_servers = 5
 pm.max_spare_servers = 35
 slowlog = /var/log/php-fpm/www-slow.log
-php_admin_value[error_log] = /var/log/php-fpm/7.0/www-error.log
+php_admin_value[error_log] = /var/log/php-fpm/7.2/www-error.log
 php_admin_flag[log_errors] = on
 php_value[session.save_handler] = files
-php_value[session.save_path]    = /var/lib/php/7.0/session
-php_value[soap.wsdl_cache_dir]  = /var/lib/php/7.0/wsdlcache
+php_value[session.save_path]    = /var/lib/php/7.2/session
+php_value[soap.wsdl_cache_dir]  = /var/lib/php/7.2/wsdlcache
 EOF
 
-service php-fpm-7.0 start
+service php-fpm-7.2 start
 
 if [ -z "$certificateid" ]
 then
@@ -439,7 +439,7 @@ EOF
 
 fi
 
-cat << 'EOF' > /etc/php-7.0.ini
+cat << 'EOF' > /etc/php-7.2.ini
 [PHP]
 engine = On
 short_open_tag = Off
@@ -622,6 +622,3 @@ cat << EOF > magento.cron
 EOF
 
 crontab -u ec2-user magento.cron
-
-
-

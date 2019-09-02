@@ -1,6 +1,6 @@
 ---
-AWSTemplateFormatVersion: '2010-09-09'
-Description: Magento 2.1 Elasticache Template
+AWSTemplateFormatVersion: '2019-04-11'
+Description: Magento 2.3 Elasticache Template
 Parameters:
   ElastiCacheAutomaticFailover:
     AllowedValues:

@@ -1,6 +1,6 @@
 ---
-AWSTemplateFormatVersion: '2010-09-09'
-Description: Magento 2.1 RDS MySQL Template
+AWSTemplateFormatVersion: '2019-04-11'
+Description: Magento 2.3 RDS MySQL Template
 Parameters:
   DBAllocatedStorage:
     ConstraintDescription: must be between 5 and 4096 GiB. If Iops specified, AllocatedStorage
