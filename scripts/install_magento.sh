@@ -59,7 +59,6 @@ else
     exit 1
 fi
 
-# cname = public name of the service (magento.javieros.tk)
 
 
 EC2_AVAIL_ZONE=`curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone`
@@ -594,8 +593,6 @@ usermod -g nginx ec2-user
 chgrp -R nginx /var/lib/php/7.2/*
 service nginx start
 
-chmod a+x configure_magento.sh
-mv configure_magento.sh /tmp
 
 protocol="https"
 if [ -z "$certificateid" ]
