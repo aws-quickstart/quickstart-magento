@@ -407,6 +407,7 @@ Resources:
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MagentoAMI  --region ${AWS::Region}
             chmod a+x install_magento.sh
             ./install_magento.sh /tmp/params.txt
+            php /var/www/html/bin/magento setup:static-content:deploy
             /opt/aws/bin/cfn-signal -e $? -d "`cat /home/ec2-user/adminuri`" -r "Build Process Complete" '${MagentoAMIWaitHandle}'
       Tags:
       - Key: Application
