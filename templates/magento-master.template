@@ -548,14 +548,7 @@ Rules:
     - Assert:
         !Not
         - !Contains
-          - - sa-east-1
-            - us-gov-east-1
-            - eu-north-1
-            - me-south-1
-            - ap-northeast-3
-            - ap-east-1
-            - cn-north-1
-            - cn-northwest-1
+          - - ap-northeast-3
           - !Ref AWS::Region
       AssertDescription: Amazon EFS is not currently supported in this region
 Resources:
