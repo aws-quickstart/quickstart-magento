@@ -113,6 +113,10 @@ events {
 }
 
 http {
+
+real_ip_header X-Forwarded-For;
+set_real_ip_from 0.0.0.0/0;
+
 upstream fastcgi_backend {
         server unix:/tmp/php-cgi.socket;
         server 127.0.0.1:9000 backup;
@@ -281,6 +285,10 @@ events {
 }
 
 http {
+
+real_ip_header X-Forwarded-For;
+set_real_ip_from 0.0.0.0/0;
+
 upstream fastcgi_backend {
         server unix:/tmp/php-cgi.socket;
         server 127.0.0.1:9000 backup;
